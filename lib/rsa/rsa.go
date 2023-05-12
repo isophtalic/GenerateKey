@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"log"
@@ -58,12 +59,13 @@ func (*RSA) GenerateKey(pubKeyPath, privateKeyPath string, bit int) error {
 	return nil
 }
 
-func (*RSA) Encrypt(info interface{}, publicKey *rsa.PublicKey) (cipherText []byte) {
+func (*RSA) Encrypt(info interface{}, publicKey *rsa.PublicKey) (cipherText []byte, cipherEncoded string) {
 	dataInfo := fmt.Sprintf("%v", info)
 	cipherText, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte(dataInfo), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+	cipherEncoded = base64.StdEncoding.EncodeToString(cipherText)
 	return
 }
 
