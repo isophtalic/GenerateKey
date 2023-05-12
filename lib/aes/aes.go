@@ -1,40 +1,42 @@
 package aes
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
 )
 
-func Encrypt(block cipher.Block, iv []byte, plaintext []byte) []byte {
-	// Create a new AES cipher block mode for CBC encryption
+type AES struct{}
+
+func (*AES) Encrypt(block cipher.Block, iv []byte, plaintext []byte) []byte {
 	mode := cipher.NewCBCEncrypter(block, iv)
 
-	// Create a buffer to hold the encrypted data
+	plaintext = pad(plaintext, aes.BlockSize)
+
 	cipherText := make([]byte, len(plaintext))
 
-	// Perform the encryption
 	mode.CryptBlocks(cipherText, plaintext)
 
 	return cipherText
 }
 
-func Decrypt(block cipher.Block, iv []byte, cipherText []byte) []byte {
-	// Create a new AES cipher block mode for CBC decryption
+func (*AES) Decrypt(block cipher.Block, iv []byte, cipherText []byte) []byte {
+
 	mode := cipher.NewCBCDecrypter(block, iv)
 
-	// Create a buffer to hold the decrypted data
 	plaintext := make([]byte, len(cipherText))
 
-	// Perform the decryption
 	mode.CryptBlocks(plaintext, cipherText)
+
+	plaintext = unPad(plaintext)
 
 	return plaintext
 }
 
 // Generate a random 32-byte key for AES-256
-func GenerateKeyBYTES(numberKeyByte int) []byte {
+func (*AES) GenerateKeyBYTES(numberKeyByte int) []byte {
 	var err error
 	key := make([]byte, 32)
 	_, err = rand.Read(key)
@@ -46,7 +48,7 @@ func GenerateKeyBYTES(numberKeyByte int) []byte {
 }
 
 // Create a new AES cipher block
-func MakeCipherBlock(key []byte) cipher.Block {
+func (*AES) MakeCipherBlock(key []byte) cipher.Block {
 	// Create a new AES cipher block
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -57,7 +59,7 @@ func MakeCipherBlock(key []byte) cipher.Block {
 }
 
 // Generate a random 16-byte IV (Initialization Vector)
-func GenerateInitializationVector() []byte {
+func (*AES) GenerateInitializationVector() []byte {
 	iv := make([]byte, aes.BlockSize)
 	_, err := rand.Read(iv)
 	if err != nil {
@@ -65,4 +67,15 @@ func GenerateInitializationVector() []byte {
 		panic(er)
 	}
 	return iv
+}
+
+func pad(data []byte, blockSize int) []byte {
+	padding := blockSize - (len(data) % blockSize)
+	padText := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(data, padText...)
+}
+
+func unPad(data []byte) []byte {
+	padding := int(data[len(data)-1])
+	return data[:len(data)-padding]
 }
