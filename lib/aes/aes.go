@@ -5,30 +5,38 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"reflect"
 )
 
 type AES struct{}
 
-func (*AES) Encrypt(block cipher.Block, iv []byte, plaintext []byte) []byte {
+func (*AES) Encrypt(block cipher.Block, iv []byte, plaintext interface{}) []byte {
+	objectBytes := structToBytes(plaintext)
 	mode := cipher.NewCBCEncrypter(block, iv)
 
-	plaintext = pad(plaintext, aes.BlockSize)
+	plaintext = pad(objectBytes, aes.BlockSize)
 
-	cipherText := make([]byte, len(plaintext))
+	cipherText := make([]byte, len(objectBytes))
 
-	mode.CryptBlocks(cipherText, plaintext)
+	mode.CryptBlocks(cipherText, objectBytes)
 
 	return cipherText
 }
 
-func (*AES) Decrypt(block cipher.Block, iv []byte, cipherText []byte) []byte {
+func (*AES) Decrypt(block cipher.Block, iv []byte, cipherText string) []byte {
+	cipherTextBytes, err := base64.StdEncoding.DecodeString(cipherText)
+	if err != nil {
+		er := fmt.Sprintf("Error decoding ciphertext: %s", err)
+		panic(er)
+	}
 
 	mode := cipher.NewCBCDecrypter(block, iv)
 
-	plaintext := make([]byte, len(cipherText))
+	plaintext := make([]byte, len(cipherTextBytes))
 
-	mode.CryptBlocks(plaintext, cipherText)
+	mode.CryptBlocks(plaintext, cipherTextBytes)
 
 	plaintext = unPad(plaintext)
 
@@ -78,4 +86,27 @@ func pad(data []byte, blockSize int) []byte {
 func unPad(data []byte) []byte {
 	padding := int(data[len(data)-1])
 	return data[:len(data)-padding]
+}
+
+func structToBytes(object interface{}) []byte {
+	value := reflect.ValueOf(object)
+
+	if value.Kind() != reflect.Struct {
+		panic("Input is not a struct")
+	}
+
+	structBytes := []byte{}
+
+	// Iterate over the struct fields
+	for i := 0; i < value.NumField(); i++ {
+		fieldValue := value.Field(i)
+
+		// Check if the field value is a string
+		if fieldValue.Kind() == reflect.String {
+			fieldBytes := []byte(fieldValue.String())
+			structBytes = append(structBytes, fieldBytes...)
+		}
+	}
+
+	return structBytes
 }
