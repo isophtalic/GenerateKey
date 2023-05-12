@@ -13,7 +13,7 @@ import (
 type AES struct{}
 
 func (*AES) Encrypt(block cipher.Block, iv []byte, plaintext interface{}) []byte {
-	objectBytes := structToBytes(plaintext)
+	objectBytes := []byte(plaintext.(string))
 	mode := cipher.NewCBCEncrypter(block, iv)
 
 	plaintext = pad(objectBytes, aes.BlockSize)
