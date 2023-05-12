@@ -12,11 +12,11 @@ import (
 
 type AES struct{}
 
-func (*AES) Encrypt(block cipher.Block, iv []byte, plaintext interface{}) []byte {
-	objectBytes := []byte(plaintext.(string))
+func (*AES) Encrypt(block cipher.Block, iv []byte, plaintext string) []byte {
+	objectBytes := []byte(plaintext)
 	mode := cipher.NewCBCEncrypter(block, iv)
 
-	plaintext = pad(objectBytes, aes.BlockSize)
+	objectBytes = pad(objectBytes, aes.BlockSize)
 
 	cipherText := make([]byte, len(objectBytes))
 
