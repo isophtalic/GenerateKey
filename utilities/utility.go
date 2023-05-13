@@ -19,7 +19,7 @@ func loadPublicKeyFromFile(publicKeyPath string) interface{} {
 	if err != nil {
 		panic(err)
 	}
-	return pemStringToPublicKey(publicKeyFile)
+	return PemStringToPublicKey(publicKeyFile)
 }
 
 func loadRSAPrivateKeyFromFile(privateKeyPath string) interface{} {
@@ -27,16 +27,10 @@ func loadRSAPrivateKeyFromFile(privateKeyPath string) interface{} {
 	if err != nil {
 		panic(err)
 	}
-	privateKeyBlock, _ := pem.Decode(privateKeyFile)
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
-	if err != nil {
-		panic(err)
-	}
-
-	return privateKey
+	return PEMStringToRSAPrivateKey(privateKeyFile)
 }
 
-func pemStringToPublicKey(pemString []byte) interface{} {
+func PemStringToPublicKey(pemString []byte) interface{} {
 	publicKeyBlock, _ := pem.Decode(pemString)
 	if publicKeyBlock == nil {
 		panic("failed to parse PEM block containing the public key")
@@ -58,4 +52,14 @@ func pemStringToPublicKey(pemString []byte) interface{} {
 		panic("unknown type of public key")
 	}
 	return key
+}
+
+func PEMStringToRSAPrivateKey(pemString []byte) interface{} {
+	privateKeyBlock, _ := pem.Decode(pemString)
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		panic(err)
+	}
+
+	return privateKey
 }
