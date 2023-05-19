@@ -12,7 +12,11 @@ var info = `XREk/gIQ4ILkiR3jDGIWJULOYS2NZfC9lzQHyvQ6HYJDDoZIeRNVivE19x/Gn7zxWE8u
 func main() {
 	var newRSA rsa.RSA
 	newRSA.GenerateKey("./keys/pub.pem", "./keys/pri.pem", 2048)
-	pubKey, _ := utilities.LoadKeyFromFile("./keys/pub.pem", "./keys/pri.pem")
-	_, cipherEncoded := newRSA.Encrypt(info, pubKey)
-	fmt.Println(cipherEncoded)
+	pubKey, priKey := utilities.LoadKeyFromFile("./keys/pub.pem", "./keys/pri.pem")
+	infoSignedString := newRSA.Sign(info, priKey)
+	fmt.Println(infoSignedString + "\n")
+
+	err := newRSA.VerifySignature(info, pubKey, infoSignedString)
+	fmt.Println(err)
+
 }

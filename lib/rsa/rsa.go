@@ -1,12 +1,14 @@
 package rsa
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -69,6 +71,32 @@ func (*RSA) Encrypt(info interface{}, publicKey *rsa.PublicKey) (cipherText []by
 	}
 	cipherEncoded = base64.StdEncoding.EncodeToString(cipherText)
 	return
+}
+
+func (*RSA) Sign(info interface{}, privateKey *rsa.PrivateKey) (infoSignedString string) {
+	dataInfo := fmt.Sprintf("%v", info)
+	hashedInfo := sha256.Sum256([]byte(dataInfo))
+	infoSigned, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hashedInfo[:])
+	if err != nil {
+		log.Fatal(err)
+	}
+	infoSignedString = base64.RawStdEncoding.EncodeToString(infoSigned)
+	return
+}
+
+func (*RSA) VerifySignature(info interface{}, publicKey *rsa.PublicKey, infoSignedString string) error {
+	dataInfo := fmt.Sprintf("%v", info)
+	hashedInfo := sha256.Sum256([]byte(dataInfo))
+
+	signature, err := base64.RawStdEncoding.DecodeString(infoSignedString)
+	if err != nil {
+		panic(err)
+	}
+	err = rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hashedInfo[:], signature)
+	if err != nil {
+		return errors.New("Invalid Signature")
+	}
+	return nil
 }
 
 func (*RSA) Decrypt(cipherText []byte, privateKey *rsa.PrivateKey) (plainText []byte) {
